@@ -20,6 +20,7 @@ class ProfileSerializer(serializers.ModelSerializer):
             "activity_level",
             "goal",
             "target_weight_kg",
+            "goal_duration_weeks",
             "daily_calorie_target",
             "daily_protein_target_g",
             "daily_carbs_target_g",

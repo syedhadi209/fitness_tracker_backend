@@ -20,6 +20,7 @@ env = environ.Env(
     OPENROUTER_MODEL=(str, "openai/gpt-4o-mini"),
     OPENROUTER_BASE_URL=(str, "https://openrouter.ai/api/v1"),
     OPENROUTER_TIMEOUT=(float, 60.0),
+    OPENROUTER_MAX_TOKENS=(int, 2048),
     CONN_MAX_AGE=(int, 60),
     SECURE_SSL_REDIRECT=(bool, False),
 )
@@ -185,6 +186,7 @@ OPENROUTER_API_KEY = env("OPENROUTER_API_KEY")
 OPENROUTER_MODEL = env("OPENROUTER_MODEL")
 OPENROUTER_BASE_URL = env("OPENROUTER_BASE_URL")
 OPENROUTER_TIMEOUT = env("OPENROUTER_TIMEOUT")
+OPENROUTER_MAX_TOKENS = env("OPENROUTER_MAX_TOKENS")
 
 
 # Email — this API does not send mail yet.

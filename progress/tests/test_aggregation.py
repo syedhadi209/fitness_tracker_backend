@@ -121,6 +121,10 @@ class StepUpsertTests(TestCase):
         self.assertEqual(self.user.step_logs.count(), 1)
         self.assertEqual(self.user.step_logs.first().steps, 7500)
 
+    def test_steps_without_weight_record_zero_burn(self):
+        entry = set_steps(self.user, 10000, date=DAY)
+        self.assertEqual(entry.calories_burned, Decimal("0"))
+
     def test_burn_scales_with_the_users_weight(self):
         set_weight(self.user, 60, date=DAY)
         light = set_steps(self.user, 10000, date=DAY).calories_burned
@@ -129,3 +133,65 @@ class StepUpsertTests(TestCase):
         heavy = set_steps(self.user, 10000, date=DAY).calories_burned
 
         self.assertGreater(heavy, light)
+
+
+class TdeeRequiresWeightTests(TestCase):
+    def test_profile_without_a_weigh_in_has_no_maintenance_calories(self):
+        user = make_user("noweight@example.com")
+        targets = aggregation.daily_targets(user, DAY)
+        self.assertIsNone(targets["bmr"])
+        self.assertIsNone(targets["calories"])
+        self.assertIsNone(aggregation.dashboard(user, DAY)["weight_kg"])
+
+    def test_logged_weight_produces_tdee(self):
+        user = make_user("weighed@example.com")
+        set_weight(user, 80, date=DAY)
+        targets = aggregation.daily_targets(user, DAY)
+        self.assertIsNotNone(targets["bmr"])
+        self.assertIsNotNone(targets["calories"])
+        self.assertGreater(targets["calories"], targets["bmr"])
+
+    def test_explicit_calorie_target_still_applies_without_weight(self):
+        user = make_user("manual@example.com", daily_calorie_target=2200)
+        targets = aggregation.daily_targets(user, DAY)
+        self.assertEqual(targets["calories"], 2200)
+        self.assertIsNone(targets["bmr"])
+
+    def test_workout_without_weight_records_zero_burn(self):
+        user = make_user("noworkoutweight@example.com")
+        workout = log_workout(user, "Running", duration_minutes=30, met_value=10, date=DAY)
+        self.assertEqual(workout.calories_burned, Decimal("0"))
+
+
+class GoalPaceTargetTests(TestCase):
+    def test_lose_goal_with_timeline_lowers_calories_below_tdee(self):
+        cut = make_user(
+            "cut@example.com",
+            goal="lose",
+            target_weight_kg=72,
+            goal_duration_weeks=16,
+            activity_level="moderate",
+        )
+        hold = make_user("hold@example.com", activity_level="moderate")
+        set_weight(cut, 80, date=DAY)
+        set_weight(hold, 80, date=DAY)
+        self.assertLess(
+            aggregation.daily_targets(cut, DAY)["calories"],
+            aggregation.daily_targets(hold, DAY)["calories"],
+        )
+
+    def test_maintain_ignores_target_and_timeline(self):
+        user = make_user(
+            "keep@example.com",
+            goal="maintain",
+            target_weight_kg=72,
+            goal_duration_weeks=8,
+            activity_level="moderate",
+        )
+        hold = make_user("keep2@example.com", activity_level="moderate")
+        set_weight(user, 80, date=DAY)
+        set_weight(hold, 80, date=DAY)
+        self.assertEqual(
+            aggregation.daily_targets(user, DAY)["calories"],
+            aggregation.daily_targets(hold, DAY)["calories"],
+        )

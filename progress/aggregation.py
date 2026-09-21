@@ -9,7 +9,7 @@ from django.utils import timezone
 from activity.models import StepLog, WorkoutLog
 from nutrition.models import MealItem
 
-from .calculations import bmr_mifflin_st_jeor, tdee
+from .calculations import bmr_mifflin_st_jeor, goal_calorie_target, tdee
 from .models import WeightLog
 from .services import current_weight_kg
 
@@ -46,15 +46,16 @@ def burned_totals(user, date):
 
 
 def daily_targets(user, date):
-    """Explicit profile targets, falling back to a computed TDEE."""
+    """Explicit profile targets, else TDEE, shifted by goal pace when set."""
     profile = getattr(user, "profile", None)
     if profile is None:
         return {"calories": None, "protein_g": None, "carbs_g": None, "fat_g": None, "bmr": None}
 
     bmr = None
-    if profile.height_cm and profile.age is not None and profile.sex:
+    weight = current_weight_kg(user, date)
+    if weight and profile.height_cm and profile.age is not None and profile.sex:
         bmr = bmr_mifflin_st_jeor(
-            weight_kg=current_weight_kg(user, date),
+            weight_kg=weight,
             height_cm=profile.height_cm,
             age_years=profile.age,
             sex=profile.sex,
@@ -62,7 +63,17 @@ def daily_targets(user, date):
 
     calorie_target = profile.daily_calorie_target
     if calorie_target is None and bmr is not None:
-        calorie_target = int(tdee(bmr, profile.activity_level))
+        maintenance = tdee(bmr, profile.activity_level)
+        if profile.goal != "maintain" and profile.target_weight_kg and profile.goal_duration_weeks:
+            calorie_target = goal_calorie_target(
+                maintenance,
+                weight,
+                profile.target_weight_kg,
+                profile.goal_duration_weeks,
+                profile.sex,
+            )
+        else:
+            calorie_target = int(maintenance)
 
     return {
         "calories": calorie_target,

@@ -55,3 +55,5 @@ class ParsedExerciseSerializer(serializers.Serializer):
     description = serializers.CharField()
     duration_minutes = serializers.FloatField()
     met_value = serializers.FloatField()
+    sets = serializers.IntegerField(required=False)
+    reps = serializers.IntegerField(required=False)

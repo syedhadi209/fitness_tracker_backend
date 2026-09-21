@@ -5,7 +5,7 @@ import httpx
 from django.test import TestCase, override_settings
 
 from assistant.openrouter import OpenRouterClient, OpenRouterError
-from assistant.parsing import parse_food
+from assistant.parsing import parse_exercise, parse_food
 
 
 class OpenRouterClientTests(TestCase):
@@ -15,7 +15,7 @@ class OpenRouterClientTests(TestCase):
             OpenRouterClient().chat([{"role": "user", "content": "hi"}])
         self.assertIn("OPENROUTER_API_KEY", str(ctx.exception))
 
-    @override_settings(OPENROUTER_API_KEY="test-key")
+    @override_settings(OPENROUTER_API_KEY="test-key", OPENROUTER_MAX_TOKENS=2048)
     @patch("assistant.openrouter.httpx.post")
     def test_sends_bearer_token_and_model(self, mock_post):
         mock_post.return_value = httpx.Response(
@@ -26,6 +26,7 @@ class OpenRouterClientTests(TestCase):
         _, kwargs = mock_post.call_args
         self.assertEqual(kwargs["headers"]["Authorization"], "Bearer test-key")
         self.assertEqual(kwargs["json"]["model"], "test/model")
+        self.assertEqual(kwargs["json"]["max_tokens"], 2048)
 
     @override_settings(OPENROUTER_API_KEY="test-key")
     @patch("assistant.openrouter.httpx.post")
@@ -33,6 +34,23 @@ class OpenRouterClientTests(TestCase):
         mock_post.return_value = httpx.Response(429, text="rate limited")
         with self.assertRaises(OpenRouterError):
             OpenRouterClient().chat([{"role": "user", "content": "hi"}])
+
+    @override_settings(OPENROUTER_API_KEY="test-key")
+    @patch("assistant.openrouter.httpx.post")
+    def test_credit_error_does_not_leak_the_raw_body(self, mock_post):
+        mock_post.return_value = httpx.Response(
+            402,
+            json={
+                "error": {
+                    "message": "This request requires more credits, or fewer max_tokens.",
+                    "code": 402,
+                }
+            },
+        )
+        with self.assertRaises(OpenRouterError) as ctx:
+            OpenRouterClient().chat([{"role": "user", "content": "hi"}])
+        self.assertIn("credits", str(ctx.exception).lower())
+        self.assertNotIn("keys/", str(ctx.exception))
 
     @override_settings(OPENROUTER_API_KEY="test-key")
     @patch("assistant.openrouter.httpx.post", side_effect=httpx.ConnectError("boom"))
@@ -64,3 +82,23 @@ class ParsingTests(TestCase):
                 return {"choices": [{"message": {"content": json.dumps(draft)}}]}
 
         self.assertEqual(parse_food("chicken sandwich", client=Client()), draft)
+
+    def test_parse_exercise_overrides_an_invented_thirty_minutes(self):
+        draft = {
+            "description": "Dumbbell bench press",
+            "duration_minutes": 30,
+            "met_value": 5,
+        }
+
+        class Client:
+            def chat(self, messages, tools=None, tool_choice="auto", response_format=None):
+                return {"choices": [{"message": {"content": json.dumps(draft)}}]}
+
+        parsed = parse_exercise(
+            "dumbbell bench press 3 sets 12 reps",
+            client=Client(),
+        )
+        self.assertEqual(parsed["sets"], 3)
+        self.assertEqual(parsed["reps"], 12)
+        self.assertEqual(parsed["duration_minutes"], 6.0)
+        self.assertEqual(parsed["met_value"], 3.5)

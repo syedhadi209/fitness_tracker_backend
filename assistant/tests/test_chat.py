@@ -123,6 +123,33 @@ class ChatLoggingTests(TestCase):
         # 10 MET x 80 kg x 0.5 h = 400 kcal
         self.assertEqual(workout.calories_burned, Decimal("400.0"))
 
+    def test_set_rep_lift_does_not_use_an_invented_half_hour(self):
+        set_weight(self.user, 80, date=date(2026, 9, 21))
+        args = json.dumps(
+            {
+                "description": "Dumbbell Bench Press",
+                "duration_minutes": 30,
+                "met_value": 5.2,
+                "sets": 3,
+                "reps": 12,
+                "load_kg": 10,
+                "date": DAY,
+            }
+        )
+        client = FakeOpenRouter(
+            [tool_call_response("log_exercise", args), text_response("Logged.")]
+        )
+        run_turn(
+            self.session,
+            self.user,
+            "i have done dumbell bench press with 10kg dumbbells 3sets 12 reps",
+            client=client,
+        )
+
+        workout = WorkoutLog.objects.get(user=self.user)
+        self.assertEqual(workout.duration_minutes, Decimal("6.0"))
+        self.assertLess(workout.calories_burned, Decimal("50"))
+
 
 class IdempotencyTests(TestCase):
     def setUp(self):

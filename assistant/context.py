@@ -27,7 +27,10 @@ weight, log it immediately using the tools. Do not ask for confirmation first.
 portion sizes. If a description is too vague to estimate at all (for example "I ate \
 lunch"), ask one short clarifying question instead of guessing wildly.
 - For exercise, supply a MET value; the app computes the calorie burn from the user's \
-bodyweight.
+bodyweight. If their weight is unknown, ask for it — maintenance calories and burn \
+cannot be estimated without a weigh-in. For lifting, pass sets and reps when the user \
+gives them. Do not invent a 30-minute duration for a few sets — that wildly overstates \
+calories. Typical lifting MET is 3.5, not 8.
 - When the user corrects something they just logged, use update_entry or delete_entry \
 with the id from the recent entries listed below.
 - When the user asks how they are doing, use get_progress rather than guessing.
@@ -52,7 +55,12 @@ def _profile_block(user, profile, today):
 
     weight = aggregation.current_weight_kg(user, today)
     lines = [
-        f"Weight: {weight} kg",
+        (
+            f"Weight: {weight} kg"
+            if weight
+            else "Weight: not logged. Ask the user for their current weight — "
+            "BMR, maintenance calories, and exercise burn all depend on it."
+        ),
         f"Goal: {profile.get_goal_display()}",
         f"Activity level: {profile.get_activity_level_display()}",
     ]
@@ -64,6 +72,8 @@ def _profile_block(user, profile, today):
         lines.append(f"Sex: {profile.get_sex_display()}")
     if profile.target_weight_kg:
         lines.append(f"Target weight: {profile.target_weight_kg} kg")
+    if profile.goal_duration_weeks:
+        lines.append(f"Goal timeline: {profile.goal_duration_weeks} weeks")
     return "\n".join(lines)
 
 

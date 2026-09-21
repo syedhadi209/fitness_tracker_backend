@@ -15,6 +15,8 @@ class WorkoutLogSerializer(serializers.ModelSerializer):
     met_value = serializers.DecimalField(
         max_digits=5, decimal_places=2, required=False, allow_null=True
     )
+    sets = serializers.IntegerField(required=False, write_only=True, min_value=1)
+    reps = serializers.IntegerField(required=False, write_only=True, min_value=1)
 
     class Meta:
         model = WorkoutLog
@@ -30,6 +32,8 @@ class WorkoutLogSerializer(serializers.ModelSerializer):
             "source",
             "source_message",
             "created_at",
+            "sets",
+            "reps",
         ]
         # calories_burned is derived from bodyweight and MET, never client-supplied.
         read_only_fields = [
@@ -44,11 +48,13 @@ class WorkoutLogSerializer(serializers.ModelSerializer):
         return log_workout(
             user=validated_data["user"],
             description=validated_data["description"],
-            duration_minutes=validated_data["duration_minutes"],
+            duration_minutes=validated_data.get("duration_minutes"),
             met_value=validated_data.get("met_value"),
             date=validated_data.get("date"),
             raw_text=validated_data.get("raw_text", ""),
             source=validated_data.get("source"),
+            sets=validated_data.pop("sets", None),
+            reps=validated_data.pop("reps", None),
         )
 
 

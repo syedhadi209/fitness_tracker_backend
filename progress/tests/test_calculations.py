@@ -5,6 +5,7 @@ from django.test import TestCase
 from progress.calculations import (
     bmr_mifflin_st_jeor,
     exercise_calories,
+    goal_calorie_target,
     step_calories,
     tdee,
 )
@@ -63,3 +64,22 @@ class StepCalorieTests(TestCase):
 
     def test_heavier_user_burns_more(self):
         self.assertGreater(step_calories(8000, 95), step_calories(8000, 60))
+
+
+class GoalCalorieTargetTests(TestCase):
+    def test_losing_weight_subtracts_from_maintenance(self):
+        # 8 kg in 16 weeks → 8 * 7700 / 112 ≈ 550 kcal/day deficit
+        self.assertEqual(goal_calorie_target(2700, 80, 72, 16, "male"), 2150)
+
+    def test_gaining_weight_adds_to_maintenance(self):
+        self.assertEqual(goal_calorie_target(2700, 70, 78, 16, "male"), 3250)
+
+    def test_aggressive_timeline_is_capped_at_1000_kcal(self):
+        # 10 kg in 2 weeks would be ~5500/day; cap at 1000
+        self.assertEqual(goal_calorie_target(2700, 80, 70, 2, "male"), 1700)
+
+    def test_does_not_drop_below_the_male_floor(self):
+        self.assertEqual(goal_calorie_target(1600, 90, 70, 4, "male"), 1500)
+
+    def test_missing_timeline_returns_maintenance(self):
+        self.assertEqual(goal_calorie_target(2700, 80, 72, None, "male"), 2700)

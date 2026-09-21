@@ -24,7 +24,7 @@ from progress import aggregation
 from progress.models import WeightLog
 from progress.services import set_weight
 
-from .models import ToolInvocation
+from .models import Role, ToolInvocation
 
 
 class ToolError(Exception):
@@ -100,15 +100,37 @@ def _log_meal(user, args, message):
     return _serialize_meal(meal)
 
 
+def _latest_user_text(message):
+    if message is None:
+        return ""
+    last = (
+        message.session.messages.filter(role=Role.USER).order_by("-created_at", "-id").first()
+    )
+    return last.content if last else ""
+
+
 def _log_exercise(user, args, message):
+    original = args["description"]
+    sets = args.get("sets")
+    reps = args.get("reps")
+    load_kg = args.get("load_kg")
+    user_text = _latest_user_text(message)
+    description = original
+    if sets and reps:
+        load = f" @ {load_kg}kg" if load_kg else ""
+        description = f"{original} · {int(sets)}×{int(reps)}{load}"
+
     workout = log_workout(
         user=user,
-        description=args["description"],
-        duration_minutes=args["duration_minutes"],
+        description=description,
+        duration_minutes=args.get("duration_minutes"),
         met_value=args.get("met_value"),
         date=_parse_date(args.get("date")),
         source=EntrySource.AI,
         source_message=message,
+        sets=sets,
+        reps=reps,
+        raw_text=user_text or original,
     )
     return {
         "entry_type": "workout",

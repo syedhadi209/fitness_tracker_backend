@@ -28,6 +28,16 @@ _STEPS_PER_KM = Decimal("1312")
 
 MINUTES_PER_HOUR = Decimal("60")
 
+# ~7700 kcal in a kilogram of body mass. Daily adjustments are capped so an
+# aggressive "I want this in two weeks" plan still produces a sustainable target.
+KCAL_PER_KG = Decimal("7700")
+DAYS_PER_WEEK = Decimal("7")
+MAX_DAILY_DELTA = Decimal("1000")
+MIN_CALORIES = {
+    "male": Decimal("1500"),
+    "female": Decimal("1200"),
+}
+
 
 def _d(value):
     return value if isinstance(value, Decimal) else Decimal(str(value))
@@ -48,6 +58,29 @@ def tdee(bmr, activity_level):
     """Total daily energy expenditure: BMR scaled by a lifestyle activity factor."""
     factor = ACTIVITY_FACTORS.get(activity_level, ACTIVITY_FACTORS["sedentary"])
     return _d(bmr) * factor
+
+
+def goal_calorie_target(maintenance, current_kg, target_kg, weeks, sex="male"):
+    """Shift TDEE by the daily surplus or deficit implied by the goal pace.
+
+    Sign comes from the weights: target below current is a deficit, above is a
+    surplus. Missing inputs fall back to plain maintenance.
+    """
+    maintenance = _d(maintenance)
+    if not current_kg or not target_kg or not weeks or int(weeks) <= 0:
+        return int(maintenance)
+
+    delta_kg = _d(target_kg) - _d(current_kg)
+    if delta_kg == 0:
+        return int(maintenance)
+
+    daily = (delta_kg * KCAL_PER_KG) / (_d(weeks) * DAYS_PER_WEEK)
+    daily = max(-MAX_DAILY_DELTA, min(MAX_DAILY_DELTA, daily))
+    calories = maintenance + daily
+    floor = MIN_CALORIES.get(sex, MIN_CALORIES["male"])
+    if calories < floor:
+        calories = floor
+    return int(calories)
 
 
 def exercise_calories(met_value, weight_kg, duration_minutes):

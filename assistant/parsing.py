@@ -76,8 +76,10 @@ FOOD_PROMPT = (
 )
 
 EXERCISE_PROMPT = (
-    "Extract the exercise, its duration in minutes, and its MET value from the user's "
-    "description. Estimate duration if it is implied rather than stated. Respond with JSON only."
+    "Extract the exercise. If the user gave sets and reps, put those in the JSON and "
+    "estimate duration from the work plus rest (about 5 seconds per rep and 90 seconds "
+    "between sets) — never default to 30 minutes for a few sets. Use MET 3.5 for "
+    "typical lifting. Only use a stated duration when the user said how long."
 )
 
 
@@ -96,4 +98,29 @@ def parse_food(text, client=None):
 
 
 def parse_exercise(text, client=None):
-    return _parse(text, EXERCISE_PROMPT, EXERCISE_SCHEMA, client)
+    from activity.estimates import (
+        is_strength,
+        parse_sets_reps,
+        resolve_duration,
+        resolve_strength_met,
+    )
+
+    draft = _parse(text, EXERCISE_PROMPT, EXERCISE_SCHEMA, client)
+    sets, reps = parse_sets_reps(text)
+    draft["duration_minutes"] = float(
+        resolve_duration(
+            text,
+            draft.get("duration_minutes"),
+            sets=sets,
+            reps=reps,
+            source="ai",
+        )
+    )
+    if is_strength(text) or (sets and reps):
+        draft["met_value"] = float(
+            resolve_strength_met(text, draft.get("met_value"), sets=sets, reps=reps)
+        )
+    if sets and reps:
+        draft["sets"] = sets
+        draft["reps"] = reps
+    return draft

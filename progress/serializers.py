@@ -45,7 +45,7 @@ class DashboardSerializer(serializers.Serializer):
     calories_remaining = serializers.DecimalField(
         max_digits=10, decimal_places=2, allow_null=True
     )
-    weight_kg = serializers.DecimalField(max_digits=6, decimal_places=2)
+    weight_kg = serializers.DecimalField(max_digits=6, decimal_places=2, allow_null=True)
 
 
 class HistorySerializer(serializers.Serializer):

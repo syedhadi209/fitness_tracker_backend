@@ -47,20 +47,42 @@ LOG_EXERCISE = {
         "name": "log_exercise",
         "description": (
             "Log a workout. Supply the MET value for the activity; the app computes "
-            "calories burned from the user's bodyweight."
+            "calories burned from the user's bodyweight. For lifting, pass sets and "
+            "reps and do NOT invent a duration — 3x12 is a few minutes, not 30."
         ),
         "parameters": {
             "type": "object",
             "properties": {
                 "description": {"type": "string"},
-                "duration_minutes": {"type": "number"},
+                "duration_minutes": {
+                    "type": "number",
+                    "description": (
+                        "Only if the user said how long. Never default to 30 minutes. "
+                        "Omit this when they gave sets and reps."
+                    ),
+                },
+                "sets": {
+                    "type": "integer",
+                    "description": "Number of sets, if the user mentioned them.",
+                },
+                "reps": {
+                    "type": "integer",
+                    "description": "Reps per set, if the user mentioned them.",
+                },
+                "load_kg": {
+                    "type": "number",
+                    "description": "Weight used, in kilograms, if mentioned.",
+                },
                 "met_value": {
                     "type": "number",
-                    "description": "Metabolic equivalent, e.g. 7.0 for running at moderate pace.",
+                    "description": (
+                        "3.5 for typical lifting (bench, curls). 6 for hard circuits. "
+                        "Cardio uses Compendium values, e.g. 8–10 for a run."
+                    ),
                 },
                 "date": _DATE_PROPERTY,
             },
-            "required": ["description", "duration_minutes", "met_value"],
+            "required": ["description"],
         },
     },
 }

@@ -74,6 +74,9 @@ class Profile(models.Model):
     )
     goal = models.CharField(max_length=10, choices=Goal.choices, default=Goal.MAINTAIN)
     target_weight_kg = models.DecimalField(max_digits=5, decimal_places=1, null=True, blank=True)
+    # How long the user wants to take to hit `target_weight_kg`. Used with
+    # current weight to turn TDEE into a deficit or surplus.
+    goal_duration_weeks = models.PositiveIntegerField(null=True, blank=True)
 
     # Null means "derive from TDEE" rather than "no target".
     daily_calorie_target = models.PositiveIntegerField(null=True, blank=True)

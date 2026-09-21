@@ -4,20 +4,19 @@ from django.utils import timezone
 
 from .models import WeightLog
 
-# Used only when a user has never logged a weight. Burn estimates need *some*
-# bodyweight, and refusing to log an exercise until a weight exists would be a
-# worse experience than an approximation the user can correct.
-DEFAULT_WEIGHT_KG = Decimal("70")
-
 
 def current_weight_kg(user, on_date=None):
-    """Most recent logged weight on or before `on_date`, falling back to the default."""
+    """Most recent logged weight on or before `on_date`.
+
+    Returns None when the user has never weighed in — callers must not invent a
+    bodyweight, because BMR and TDEE are linear in kilograms.
+    """
     on_date = on_date or timezone.localdate()
     entry = (
         WeightLog.objects.filter(user=user, date__lte=on_date).order_by("-date").first()
         or WeightLog.objects.filter(user=user).order_by("date").first()
     )
-    return entry.weight_kg if entry else DEFAULT_WEIGHT_KG
+    return entry.weight_kg if entry else None
 
 
 def set_weight(user, weight_kg, date=None, body_fat_pct=None, note="", source_message=None):
