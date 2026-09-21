@@ -41,7 +41,7 @@ class OpenRouterClient:
         return {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
-            "HTTP-Referer": "http://localhost:3000",
+            "HTTP-Referer": "https://relishfit.vercel.app",
             "X-Title": "Relish",
         }
 

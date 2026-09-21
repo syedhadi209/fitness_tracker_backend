@@ -14,8 +14,16 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 env = environ.Env(
     DEBUG=(bool, False),
     ALLOWED_HOSTS=(list, ["localhost", "127.0.0.1"]),
-    CORS_ALLOWED_ORIGINS=(list, ["http://localhost:3000", "http://127.0.0.1:3000"]),
-    CSRF_TRUSTED_ORIGINS=(list, []),
+    CORS_ALLOWED_ORIGINS=(list, [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "https://relishfit.vercel.app",
+    ]),
+    CSRF_TRUSTED_ORIGINS=(list, [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "https://relishfit.vercel.app",
+    ]),
     OPENROUTER_API_KEY=(str, ""),
     OPENROUTER_MODEL=(str, "openai/gpt-4o-mini"),
     OPENROUTER_BASE_URL=(str, "https://openrouter.ai/api/v1"),

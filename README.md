@@ -106,7 +106,7 @@ This repo is the service root. Railway will pick up `Dockerfile` and `railway.js
 |----------|--------|
 | `SECRET_KEY` | long random string |
 | `DEBUG` | `False` |
-| `CORS_ALLOWED_ORIGINS` | your frontend origin, e.g. `https://your-app.vercel.app` |
+| `CORS_ALLOWED_ORIGINS` | `https://relishfit.vercel.app` |
 | `OPENROUTER_API_KEY` | OpenRouter key |
 | `OPENROUTER_MODEL` | `openai/gpt-4o-mini` (or any OpenRouter model) |
 
