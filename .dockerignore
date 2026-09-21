@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Secrets and local data
+.env
+.env.*
+!.env.example
+*.sqlite3
+db.sqlite3
+media/
+staticfiles/
+
+# Git / IDE
+.git
+.gitignore
+.idea/
+.vscode/
+.DS_Store
+
+# Docs and tests that don't belong in the image
+README.md
+*.md

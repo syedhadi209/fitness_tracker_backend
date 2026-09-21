@@ -75,3 +75,33 @@ than accepted from the client.
 ```bash
 python manage.py test
 ```
+
+## Docker
+
+```bash
+docker build -t fitness-tracker-api .
+docker run --env-file .env -p 8000:8000 fitness-tracker-api
+```
+
+The container runs migrations, collects static files, then serves with gunicorn on `$PORT` (default 8000).
+
+## Railway
+
+This repo is the service root. Railway will pick up `Dockerfile` and `railway.json`.
+
+1. New project → Deploy from GitHub → `syedhadi209/fitness_tracker_backend`.
+2. Add a **PostgreSQL** plugin so Railway injects `DATABASE_URL`.
+3. Generate a public domain (Settings → Networking). `RAILWAY_PUBLIC_DOMAIN` is then added to `ALLOWED_HOSTS` automatically.
+4. Set variables:
+
+| Variable | Value |
+|----------|--------|
+| `SECRET_KEY` | long random string |
+| `DEBUG` | `False` |
+| `CORS_ALLOWED_ORIGINS` | your frontend origin, e.g. `https://your-app.vercel.app` |
+| `OPENROUTER_API_KEY` | OpenRouter key |
+| `OPENROUTER_MODEL` | `openai/gpt-4o-mini` (or any OpenRouter model) |
+
+`PORT` and `DATABASE_URL` are provided by Railway. Leave `SECURE_SSL_REDIRECT` unset (Railway terminates TLS and health-checks over HTTP).
+
+Health check: `GET /api/health/`.
