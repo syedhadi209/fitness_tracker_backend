@@ -42,7 +42,7 @@ class OpenRouterClient:
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
             "HTTP-Referer": "http://localhost:3000",
-            "X-Title": "Fitness Tracker",
+            "X-Title": "Relish",
         }
 
     def chat(self, messages, tools=None, tool_choice="auto", response_format=None):

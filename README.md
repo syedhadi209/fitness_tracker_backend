@@ -1,4 +1,4 @@
-# Fitness Tracker API
+# Relish API
 
 Django REST Framework backend: email/password auth, food and exercise logging with
 LLM-assisted parsing via OpenRouter, step and weight tracking, and dashboard

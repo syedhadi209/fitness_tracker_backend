@@ -98,7 +98,7 @@ SIMPLE_JWT = {
 }
 
 SPECTACULAR_SETTINGS = {
-    'TITLE': 'Fitness Tracker API',
+    'TITLE': 'Relish API',
     'DESCRIPTION': 'Food, exercise, step and weight tracking with a conversational assistant.',
     'VERSION': '0.1.0',
     'SERVE_INCLUDE_SCHEMA': False,
