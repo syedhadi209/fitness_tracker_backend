@@ -18,7 +18,12 @@ pip install -r requirements.txt
 cp .env.example .env   # then edit DATABASE_URL and OPENROUTER_API_KEY
 
 python manage.py migrate
+
+# Local development only (auto-reload). Do not use this in production.
 python manage.py runserver
+
+# Production-style process (Gunicorn). This is what Docker and Railway run.
+gunicorn config.wsgi:application --config gunicorn.conf.py
 ```
 
 Interactive API docs: [http://127.0.0.1:8000/api/docs/](http://127.0.0.1:8000/api/docs/)
@@ -83,7 +88,10 @@ docker build -t fitness-tracker-api .
 docker run --env-file .env -p 8000:8000 fitness-tracker-api
 ```
 
-The container runs migrations, collects static files, then serves with gunicorn on `$PORT` (default 8000).
+The container runs migrations, collects static files, then serves with **Gunicorn**
+(`gunicorn.conf.py`) on `$PORT` (default 8000). Django's `runserver` is never used
+in the image. A `Procfile` is included so a Nixpacks/PaaS deploy also starts Gunicorn
+instead of the development server.
 
 ## Railway
 
